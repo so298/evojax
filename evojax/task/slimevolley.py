@@ -156,17 +156,24 @@ def downsize_image(img):
     return cv2.resize(img, (PIXEL_WIDTH, PIXEL_HEIGHT),
                       interpolation=cv2.INTER_AREA)
 
+def ensure_scalar(x):
+    if isinstance(x, jnp.ndarray):
+        return x.squeeze()
+    return x
 
 # conversion from space to pixels (allows us to render to diff resolutions)
 def toX(x):
+    x = ensure_scalar(x)
     return (x+REF_W/2)*FACTOR
 
 
 def toP(x):
+    x = ensure_scalar(x)
     return (x)*FACTOR
 
 
 def toY(y):
+    y = ensure_scalar(y)
     return y*FACTOR
 
 
@@ -335,8 +342,8 @@ class Particle:
         self.c = c
 
     def display(self, canvas):
-        return circle(canvas, toX(float(self.p.x)), toY(float(self.p.y)),
-                      toP(float(self.p.r)), color=self.c)
+        return circle(canvas, toX(float(ensure_scalar(self.p.x))), toY(float(ensure_scalar(self.p.y))),
+                      toP(float(ensure_scalar(self.p.r))), color=self.c)
 
     def move(self):
         self.p = ParticleState(self.p.x+self.p.vx*TIMESTEP,
@@ -591,13 +598,13 @@ class Agent:
         return getObsArray(self.state)
 
     def display(self, canvas, ball_x, ball_y):
-        bx = float(ball_x)
-        by = float(ball_y)
+        bx = float(ensure_scalar(ball_x))
+        by = float(ensure_scalar(ball_y))
         p = self.p
-        x = float(p.x)
-        y = float(p.y)
-        r = float(p.r)
-        direction = int(p.direction)
+        x = float(ensure_scalar(p.x))
+        y = float(ensure_scalar(p.y))
+        r = float(ensure_scalar(p.r))
+        direction = int(ensure_scalar(p.direction))
 
         angle = math.pi * 60 / 180
         if direction == 1:
@@ -624,7 +631,7 @@ class Agent:
                         color=(0, 0, 0))
 
         # draw coins (lives) left
-        num_lives = int(p.life)
+        num_lives = int(ensure_scalar(p.life))
         for i in range(1, num_lives):
             canvas = circle(canvas, toX(direction*(REF_W/2+0.5-i*2.)),
                             WINDOW_HEIGHT-toY(1.5), toP(0.5),
